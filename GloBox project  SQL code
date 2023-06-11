@@ -1,0 +1,106 @@
+--1. How many users in the control group were in Canada?
+SELECT COUNT(*)
+FROM groups AS g
+JOIN users AS u
+ON g.uid = u.id
+WHERE u.country = 'CAN' AND g.group = 'A';
+
+--2. What was the conversion rate of all users?
+WITH A AS (
+    SELECT COUNT(DISTINCT uid) :: NUMERIC AS c1 
+FROM activity),
+U AS (
+    SELECT COUNT(DISTINCT id) :: NUMERIC AS c2 
+    FROM users
+)
+SELECT ROUND((c1/c2)*100, 2)
+FROM A, U;
+
+--3. As of February 1st, 2023, how many users were in the A/B test?
+SELECT COUNT(*)
+FROM groups AS g
+JOIN users AS u
+ON g.uid = u.id
+WHERE join_dt <= '2023-02-01';
+
+/*1. What is the average amount spent per user for the control and treatment groups? 
+This question is required.*/
+SELECT g.group, SUM(a.spent) / COUNT(DISTINCT u.id) AS avg_amt
+FROM users AS u
+LEFT JOIN activity AS a
+ON a.uid = u.id
+JOIN groups AS g
+ON g.uid = u.id
+GROUP BY g.group;
+
+/*2. What is the 95% confidence interval for the average amount spent per user in the control? 
+This question is required.*/
+SELECT (SUM(spent)/COUNT(DISTINCT u.id)) - (1.960061 * (STDDEV(COALESCE(spent,0))/SQRT(COUNT(DISTINCT u.id)))) AS lower_bound,
+(SUM(spent)/COUNT(DISTINCT u.id)) + (1.960061 * (STDDEV(COALESCE(spent,0))/SQRT(COUNT(DISTINCT u.id)))) AS upper_bound
+FROM users AS u
+JOIN groups AS g
+ON u.id = g.uid
+LEFT JOIN activity AS a
+ON a.uid = g.uid
+WHERE g.group = 'A';
+
+/*3. What is the 95% confidence interval for the average amount spent per user in the treatment?
+This question is required.*/
+SELECT (SUM(spent)/COUNT(DISTINCT u.id)) - (1.960061 * (STDDEV(COALESCE(spent,0))/SQRT(COUNT(DISTINCT u.id)))) AS lower_bound,
+(SUM(spent)/COUNT(DISTINCT u.id)) + (1.960061 * (STDDEV(COALESCE(spent,0))/SQRT(COUNT(DISTINCT u.id)))) AS upper_bound
+FROM users AS u
+JOIN groups AS g
+ON u.id = g.uid
+LEFT JOIN activity AS a
+ON a.uid = g.uid
+WHERE g.group = 'B';
+
+/*4. Conduct a hypothesis test to see whether there is a difference in the average amount spent per user between the two groups. What are the resulting p-value and conclusion?
+This question is required.*/
+--Solved in excel
+
+/*5. What is the 95% confidence interval for the difference in the average amount spent per user between the treatment and the control (treatment-control)*/
+--Solved in excel
+
+
+--6. What is the user conversion rate for the control and treatment groups?
+WITH conversion AS (
+    SELECT g.group, COUNT(DISTINCT a.uid)/ COUNT(DISTINCT u.id) :: NUMERIC AS conversion_rate
+FROM users AS u
+JOIN groups AS g
+ON g.uid = u.id
+LEFT JOIN activity AS a
+ON a.uid = g.uid
+GROUP BY g.group)
+SELECT ROUND(conversion_rate*100, 2)
+FROM conversion;
+
+--7. What is the 95% confidence interval for the conversion rate of users in the control?
+SELECT COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC AS conversion_rate,
+   (1.96 * sqrt((COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC * (1 - COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC)) /COUNT(DISTINCT u.id))) AS margin_of_error,
+   COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC - (1.96 * sqrt((COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC * (1 - COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC)) / COUNT(DISTINCT u.id))) AS lower_bound,
+  COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC + (1.96 * sqrt((COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC * (1 - COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC)) / COUNT(DISTINCT u.id))) AS upper_bound
+FROM users AS u
+JOIN groups AS g
+ON g.uid = u.id
+LEFT JOIN activity AS a
+ON a.uid = g.uid
+WHERE g.group = 'A';
+
+--8. What is the 95% confidence interval for the conversion rate of users in the treatment? 
+SELECT COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC AS conversion_rate,
+   (1.96 * sqrt((COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC * (1 - COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC)) /COUNT(DISTINCT u.id))) AS margin_of_error,
+   COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC - (1.96 * sqrt((COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC * (1 - COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC)) / COUNT(DISTINCT u.id))) AS lower_bound,
+  COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC + (1.96 * sqrt((COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC * (1 - COUNT(DISTINCT a.uid)/COUNT(DISTINCT u.id) :: NUMERIC)) / COUNT(DISTINCT u.id))) AS upper_bound
+FROM users AS u
+JOIN groups AS g
+ON g.uid = u.id
+LEFT JOIN activity AS a
+ON a.uid = g.uid
+WHERE g.group = 'B';
+
+/*9. Conduct a hypothesis test to see whether there is a difference in the conversion rate between the two groups. What are the resulting p-value and conclusion?*/
+--Solved in excel
+
+/*10. What is the 95% confidence interval for the difference in the conversion rate between the treatment and control (treatment-control)?*/
+--Solved in excel
