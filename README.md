@@ -1,0 +1,2 @@
+# GloBox_Hypothesis-Testing
+GloBox is an E-commerce company that specializes in sourcing unique and high-quality products from around the world. The growth team decide to run an A/B test on the existing landing page as GloBox has introduced food and drinks offerings. The existing page of the website is without the food and drinks banner and the experimental landing page has food and drinks banner.  An A/B test is performed on the landing page to see which version of the landing page performs better to increase the revenue. 
